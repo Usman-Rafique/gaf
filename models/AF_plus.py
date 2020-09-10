@@ -9,11 +9,6 @@ import numpy as np
 from config import cfg
 from .resnet import ResNet18_OS8
 
-
-def count_trainable_parameters(model):  # to count trainable parameters
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-
 class AF_plus(nn.Module):
     def __init__(self, image_size, border_size, vector_size):
         # image_size: size of image, needed to construct a grid for Coord Conv layers
@@ -134,14 +129,10 @@ class AF_plus(nn.Module):
 
         flow = u.permute(0, 2, 3, 1)
 
-        # image_in = image_in.permute(0, 3, 1, 2)
-
         # expanding the grid to the batch size
         grid2 = self.grid.expand(image_in.shape[0], self.grid.shape[0], self.grid.shape[1],
                                  self.grid.shape[2]).float().cuda() + flow
 
         image_out = F.grid_sample(input=image_in, grid=grid2)
-
-        # image_out = image_out.permute(0, 2, 3, 1)
 
         return image_out, flow, features

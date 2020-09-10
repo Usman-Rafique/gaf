@@ -136,10 +136,6 @@ class FDS(nn.Module):
         
         # downsample flow
         flow_small = F.interpolate(flow.permute(0, 3, 1, 2), scale_factor=(1 / 4), mode='nearest').permute(0, 2, 3, 1)
-
-        # warp feature maps
-        #print('flow:', flow_small.shape)
-        #print('grid:', self.grid_small.shape)
         features_warped = apply_warp(features.cuda(), flow_small.cuda(), grid=self.grid_small.unsqueeze(0).cuda())
 
         image_gen = self.decoder(features_warped)

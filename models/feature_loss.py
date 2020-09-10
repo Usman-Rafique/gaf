@@ -18,12 +18,7 @@ class feature_loss(nn.Module):
         #self.L2_loss = nn.MSELoss(reduction='none')
         self.L2_loss = nn.MSELoss()
 
-    def forward(self, output, true_img):   # x is disp_vector
-        #out_feature = self.resNet_feature(output.permute(0, 3, 1, 2))
-        #true_feature = self.resNet_feature(true_img.permute(0, 3, 1, 2))
-        #L2 = self.L2_loss(out_feature, true_feature)  # new
-        #loss_final = torch.mean(torch.mean(torch.mean(L2, dim=3), dim=2), dim=1)
-        
+    def forward(self, output, true_img):           
         out_feature = self.resNet_feature(output)
         true_feature = self.resNet_feature(true_img)
         loss_final = self.L2_loss(out_feature, true_feature)  
