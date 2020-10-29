@@ -48,3 +48,8 @@ The code is released only for academic and research purposes.
   year={2020}
 }
 </pre>
+
+## Updates
+* Oct 29, 2020: Uploaded the checkpoint for GAF. Visualization and evaluation scripts are updated to use the checkpoints provided in the directory `checkpoints`.
+
+Note: I have noticed that evaluation results from these pretrained models are slightly different from the ones reported in the paper. This is due to the way images are downsampled for public release. For any quantitative comparison, we strongly recommend to train the models using the training scripts provided in this repository. If you have any trouble in reproducing the results, please feel to reach out: usman dot rafique @ uky . edu
