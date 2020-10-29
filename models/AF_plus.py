@@ -62,13 +62,13 @@ class AF_plus(nn.Module):
         yy = torch.linspace(-1, 1, image_size[0])
         xx = torch.linspace(-1, 1, image_size[1] + (border_size * 2))
         grid_x, grid_y = torch.meshgrid(yy, xx)
-        self.grid = torch.cat([grid_y.unsqueeze(2), grid_x.unsqueeze(2)], dim=2).cuda()
+        self.grid = torch.cat([grid_y.unsqueeze(2), grid_x.unsqueeze(2)], dim=2)
         
         # small grid for coordconv, in the first layer of decoder
         yy = torch.linspace(-1, 1, int(image_size[0]/8))
         xx = torch.linspace(-1, 1, int((image_size[1] + (border_size * 2))/8))
         grid_x, grid_y = torch.meshgrid(yy, xx)
-        self.grid_small = torch.cat([grid_y.unsqueeze(2), grid_x.unsqueeze(2)], dim=2).cuda()
+        self.grid_small = torch.cat([grid_y.unsqueeze(2), grid_x.unsqueeze(2)], dim=2)
         
     def forward(self, image_in, v):  
 
@@ -80,7 +80,7 @@ class AF_plus(nn.Module):
         z = z.expand(z.shape[0], z.shape[1], y.shape[2], y.shape[3])
 
         # coordinates for coordconv
-        coord_small = self.grid_small.permute(2, 0, 1).expand(image_in.shape[0], self.grid_small.shape[2], self.grid_small.shape[0], self.grid_small.shape[1])
+        coord_small = self.grid_small.permute(2, 0, 1).expand(image_in.shape[0], self.grid_small.shape[2], self.grid_small.shape[0], self.grid_small.shape[1]).cuda()
         
         u = torch.cat((y, z, coord_small), dim=1)
 
@@ -112,7 +112,7 @@ class AF_plus(nn.Module):
         u = F.interpolate(u, scale_factor=2, mode='nearest')
         
         # coord conv
-        coord = self.grid.permute(2, 0, 1).expand(image_in.shape[0], self.grid.shape[2], self.grid.shape[0], self.grid.shape[1])
+        coord = self.grid.permute(2, 0, 1).expand(image_in.shape[0], self.grid.shape[2], self.grid.shape[0], self.grid.shape[1]).cuda()
         u = torch.cat((u, coord), dim=1)
 
         u = self.conv4(u)

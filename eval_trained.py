@@ -21,13 +21,12 @@ def PSNR_single(prediction, target):
     return (psnr)
 
 # setup checkpoint directory
-out_dir = cfg.train.out_dir
-if not os.path.exists(out_dir):
-    raise ValueError('cannot find the directory and trained model')
+checkpoint_dir = 'checkpoints'
 
 # make a directory for image results
-if not os.path.exists(os.path.join(out_dir, 'image_results')):
-    os.makedirs(os.path.join(out_dir, 'image_results'))
+out_dir = os.path.join(cfg.train.out_dir, 'eval_results_'+cfg.model.name)
+if not os.path.exists(out_dir):
+    os.makedirs(out_dir)
 else:
     print('overwriting results')
 
@@ -37,23 +36,32 @@ print('Configuration: \n', cfg)
 cfg.train.shuffle = True
 test_loader = get_dataset(dataset_name=cfg.data.name, mode = 'test')
 print('Data loaders have been prepared!')
-print(len(test_loader))
 
 # network
 af_plus = get_network('AF_plus')
 
 # load pretrained model
-if cfg.model.name == 'FDS':
+if cfg.model.name == 'AF_plus':
+    af_plus.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'af_plus_dict.pth')))
+elif cfg.model.name == 'FDS':
     fds = get_network('FDS')
-    fds.load_state_dict(torch.load(os.path.join(out_dir, 'fds_dict.pth')))
-    af_plus.load_state_dict(torch.load(os.path.join('checkpoints', 'af_plus_dict.pth')))
+    fds.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'fds_dict.pth')))
+    af_plus.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'af_plus_dict.pth')))
     fds.eval()
-else:
-    af_plus.load_state_dict(torch.load(os.path.join(out_dir, 'model_dict.pth')))
+elif cfg.model.name == 'GAF':
+    af_plus.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'af_plus_dict.pth')))
+    
+    fds = get_network('FDS')
+    fds.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'fds_dict.pth')))
+    fds.eval()
+    
+    fusion = get_network('GAF')
+    fusion.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'fusion_dict.pth')))
+    fusion.eval()
+    
+af_plus.eval()    
 
-
-# l1 function
-l1_function = torch.nn.L1Loss()
+l1_function = torch.nn.L1Loss()  # l1 error
 
 print('Starting evaluation...')
 
@@ -73,6 +81,13 @@ with torch.no_grad():
         
         if cfg.model.name == 'FDS':
             image_out = fds(source, flow)
+            
+        elif cfg.model.name == 'GAF':
+            image_gen = fds(source, flow)
+            input_to_fusion = torch.cat([ source, image_out, image_gen,  flow.permute(0, 3, 1, 2)], dim=1)
+            fusion_scores = torch.sigmoid(fusion(input_to_fusion)) # get fusion scores
+
+            image_out = fusion_scores*image_out + (1 - fusion_scores)*image_gen # final GAF synthesis
             
         source = source[:, :, :, cfg.data.border_size:-cfg.data.border_size]
         target = target[:, :, :, cfg.data.border_size:-cfg.data.border_size]
